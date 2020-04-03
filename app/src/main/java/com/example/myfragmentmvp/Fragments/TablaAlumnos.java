@@ -3,7 +3,7 @@ package com.example.myfragmentmvp.Fragments;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
@@ -21,49 +21,37 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.myfragmentmvp.Enums.Enums;
+import com.example.myfragmentmvp.FormAlumno;
 import com.example.myfragmentmvp.Helpers.Helpers;
-import com.example.myfragmentmvp.HelpersServices.HelpersService;
+import com.example.myfragmentmvp.Models.Alumno;
+import com.example.myfragmentmvp.Models.Login;
+import com.example.myfragmentmvp.Presenters.AlumnoPresenter;
 import com.example.myfragmentmvp.R;
+import com.example.myfragmentmvp.Views.EditAlumno;
 import com.loopj.android.http.AsyncHttpClient;
-import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.JsonHttpResponseHandler;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-/**
- * A simple {@link Fragment} subclass.
- * Activities that contain this fragment must implement the
- * {@link TablaAlumnos.OnFragmentInteractionListener} interface
- * to handle interaction events.
- * Use the {@link TablaAlumnos#newInstance} factory method to
- * create an instance of this fragment.
- */
-public class TablaAlumnos extends Fragment {
+public class TablaAlumnos extends Fragment implements AlumnoPresenter.View{
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
+    Button btnNuevoAlumno;
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
     public static String iden="a";
-    TableLayout tl;
+    public static TableLayout tl;
     // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
-
+    AlumnoPresenter present;
     private OnFragmentInteractionListener mListener;
 
     public TablaAlumnos() {
         // Required empty public constructor
     }
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment TablaAlumnos.
-     */
     // TODO: Rename and change types and number of parameters
     public static TablaAlumnos newInstance(String param1, String param2) {
         TablaAlumnos fragment = new TablaAlumnos();
@@ -86,17 +74,61 @@ public class TablaAlumnos extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        present = new AlumnoPresenter(this);
         // Inflate the layout for this fragment
         final View view = inflater.inflate(R.layout.fragment_tabla_alumnos, container, false);
+        btnNuevoAlumno = view.findViewById(R.id.btnEditarCarrera);
+        btnNuevoAlumno.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    Intent intent = new Intent(getContext() , FormAlumno.class);
+                    startActivity(intent);
+                }catch (Exception e){}
+                System.out.println("Se eligió el id "+iden);
+                //Navegar a pagina de editar
+            }
+        });
         tl = (TableLayout) view.findViewById(R.id.tl);
-        AsyncHttpClient cliente = HelpersService.getClientToken();
-        cliente.get(Helpers.URL+ Enums.getAlumnos,new JsonHttpResponseHandler(){
+        cargarTabla();
+        return view;
+    }
+
+    // TODO: Rename method, update argument and hook method into UI event
+    public void onButtonPressed(Uri uri) {
+        if (mListener != null) {
+            mListener.onFragmentInteraction(uri);
+        }
+    }
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        if (context instanceof OnFragmentInteractionListener) {
+            mListener = (OnFragmentInteractionListener) context;
+        } else {
+            throw new RuntimeException(context.toString()
+                    + " must implement OnFragmentInteractionListener");
+        }
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        mListener = null;
+    }
+
+    @Override
+    public void cargarTabla() {
+        String token = Login.token;
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.addHeader("Authorization", "Token "+ token);
+        client.get(Helpers.URL+ Enums.getAlumnos,new JsonHttpResponseHandler(){
             @SuppressLint("ResourceType")
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONArray response) {
                 System.out.println("ESTO ES ONSUCCESS");
-                Context con = getView().getContext();
-
+                Context con = getContext();
                 try {
                     System.out.println("ESTO ES EL TRYYYYYY");
                     //System.out.println(response.toString());
@@ -113,20 +145,45 @@ public class TablaAlumnos extends Fragment {
 
                     TextView label_name = new TextView(con);
                     label_name.setId(20);
-                    label_name.setText("Nombre");
+                    label_name.setText("Name");
                     label_name.setTextColor(Color.WHITE);
                     label_name.setPadding(5, 5, 50, 5);
                     tr_head.addView(label_name);// add the column to the table row here
+
+                    TextView label_carrera = new TextView(con);
+                    label_carrera.setId(21);
+                    label_carrera.setText("Lastname");
+                    label_carrera.setTextColor(Color.WHITE);
+                    label_carrera.setPadding(5, 5, 50, 5);
+                    tr_head.addView(label_carrera);// add the column to the table row here
+
+                    TextView label_mas = new TextView(con);
+                    label_mas.setId(21);
+                    label_mas.setText("More");
+                    label_mas.setTextColor(Color.WHITE);
+                    label_mas.setPadding(5, 5, 50, 5);
+                    tr_head.addView(label_mas);// add the column to the table row here
+
+                    TextView label_del = new TextView(con);
+                    label_del.setId(21);
+                    label_del.setText("Delete");
+                    label_del.setTextColor(Color.WHITE);
+                    label_del.setPadding(5, 5, 50, 5);
+                    tr_head.addView(label_del);// add the column to the table row here
+
+                    TextView label_edit = new TextView(con);
+                    label_edit.setId(21);
+                    label_edit.setText("Edit");
+                    label_edit.setTextColor(Color.WHITE);
+                    label_edit.setPadding(5, 5, 50, 5);
+                    tr_head.addView(label_edit);// add the column to the table row here
+
                     tr_head.setLayoutParams(new TableRow.LayoutParams(
                             TableRow.LayoutParams.MATCH_PARENT,
                             TableRow.LayoutParams.WRAP_CONTENT));
 
-                    TextView label_carrera = new TextView(con);
-                    label_carrera.setId(21);
-                    label_carrera.setText("lastname");
-                    label_carrera.setTextColor(Color.WHITE);
-                    label_carrera.setPadding(5, 5, 50, 5);
-                    tr_head.addView(label_carrera);// add the column to the table row here
+
+
 
                     tl.addView(tr_head, new TableLayout.LayoutParams(
                             TableRow.LayoutParams.FILL_PARENT,
@@ -166,8 +223,9 @@ public class TablaAlumnos extends Fragment {
                         tr.addView(labelCarrera);
 
                         Button btnCosa = new Button(con);
+                        btnCosa.setWidth(6);
                         btnCosa.setId(i+200);
-                        btnCosa.setText("Ver mas");
+                        btnCosa.setText("+");
                         btnCosa.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
@@ -175,7 +233,7 @@ public class TablaAlumnos extends Fragment {
                                     String ids = temp.get("id").toString();
                                     System.out.println(".-..-.-.-.-.-.-..-.-.-");
                                     iden = ids;
-                                    getData(iden);
+                                    getAlumno(Integer.parseInt(iden));
                                     System.out.println(temp.get("id").toString());
                                     System.out.println(".-..-.-.-.-.-.-..-.-.-");
                                 }catch (Exception e){}
@@ -185,12 +243,50 @@ public class TablaAlumnos extends Fragment {
                         });
                         tr.addView(btnCosa);
 
+                        Button btnEliminar = new Button(con);
+                        btnEliminar.setWidth(6);
+                        btnEliminar.setId(i+200);
+                        btnEliminar.setText("-");
+                        btnEliminar.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                try {
+                                    String ids = temp.get("id").toString();
+                                    System.out.println(".-..-.-.-.-.-.-..-.-.-");
+                                    iden = ids;
+                                    deleteAlumno(Integer.parseInt(iden));
+                                    System.out.println(temp.get("id").toString());
+                                    System.out.println(".-..-.-.-.-.-.-..-.-.-");
+                                }catch (Exception e){}
+                                System.out.println("Se eligió el id "+iden);
+                                //Navegar a pagina de editar
+                            }
+                        });
+                        tr.addView(btnEliminar);
+
+                        Button btnEditar = new Button(con);
+                        btnEditar.setWidth(6);
+                        btnEditar.setId(i+200);
+                        btnEditar.setText("E");
+                        btnEditar.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                try {
+                                    String ids = temp.get("id").toString();
+                                    Helpers.select = Integer.parseInt(ids);
+                                    Intent intent = new Intent(getContext() , EditAlumno.class);
+                                    startActivity(intent);
+                                }catch (Exception e){}
+                                System.out.println("Se eligió el id "+iden);
+                            }
+                        });
+                        tr.addView(btnEditar);
+
 
                         tl.addView(tr, new TableLayout.LayoutParams(
                                 TableRow.LayoutParams.FILL_PARENT,
                                 TableRow.LayoutParams.WRAP_CONTENT));
                     }
-
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -199,8 +295,9 @@ public class TablaAlumnos extends Fragment {
             @Override
             public void onFailure(int statusCode, Header[] headers, Throwable error, JSONObject response) {
                 JSONObject arr = null;
-                Context con = getView().getContext();
+                Context con = getContext();
                 try {
+                    Toast.makeText(con, String.valueOf(error), Toast.LENGTH_LONG).show();
                     Toast.makeText(con, "Error al obtener datos, quizá se murió el server", Toast.LENGTH_LONG).show();
 
                 } catch (Exception e) {
@@ -209,73 +306,39 @@ public class TablaAlumnos extends Fragment {
 
             }
         });
-        return view;
-    }
-
-    // TODO: Rename method, update argument and hook method into UI event
-    public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
-        }
     }
 
     @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        if (context instanceof OnFragmentInteractionListener) {
-            mListener = (OnFragmentInteractionListener) context;
-        } else {
-            throw new RuntimeException(context.toString()
-                    + " must implement OnFragmentInteractionListener");
-        }
+    public void getAlumno(int id) {
+        Alumno.getAlumno(id,this);
     }
 
     @Override
-    public void onDetach() {
-        super.onDetach();
-        mListener = null;
+    public void dialogAlumno(Alumno alumno) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle("Información del alumno seleccionado")
+                .setMessage("Nombre: "+ alumno.nombre +
+                        " \n Apellido: " + alumno.apellidos +
+                        " \n Edad: "+ alumno.edad+
+                        " \n Sexo: "+ alumno.sexo+
+                        " \n Direccion: "+ alumno.direccion);
+
+        builder.create().show();
     }
 
-    public void getData(String id){
-        AsyncHttpClient cliente = HelpersService.getClientToken();
-        cliente.get(Helpers.URL+Enums.getAlumnos+id, new AsyncHttpResponseHandler() {
-
-            @Override
-            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-                System.out.println("-------------------------");
-                String x = new String(responseBody);
-                System.out.println(x);
-                System.out.println("-------------------------");
-                AlertDialog.Builder alerta = new AlertDialog.Builder(getView().getContext());
-                alerta.setMessage(x);
-                alerta.setCancelable(false);
-                alerta.setPositiveButton("ok", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        onFinish();
-                    }
-                });
-                AlertDialog titlulo = alerta.create();
-                titlulo.show();
-            }
-
-            @Override
-            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-
-            }
-        });
+    @Override
+    public void deleteAlumno(int id) {
+        Alumno.deleteAlumno(id,this);
     }
 
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
+    @Override
+    public void dialogNotificación(String titulo, String texto) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle(titulo)
+                .setMessage(texto);
+        builder.create().show();
+    }
+
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
         void onFragmentInteraction(Uri uri);

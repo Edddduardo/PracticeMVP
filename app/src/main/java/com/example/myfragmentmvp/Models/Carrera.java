@@ -1,20 +1,10 @@
-package com.example.myfragmentmvp.Fragments;
+package com.example.myfragmentmvp.Models;
 
 import android.annotation.SuppressLint;
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
-import android.net.Uri;
-import android.os.Bundle;
-
-import androidx.fragment.app.Fragment;
-import cz.msebera.android.httpclient.Header;
-
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -24,148 +14,116 @@ import android.widget.Toast;
 import com.example.myfragmentmvp.EditCarrera;
 import com.example.myfragmentmvp.Enums.Enums;
 import com.example.myfragmentmvp.FormCarrera;
+import com.example.myfragmentmvp.Fragments.TablaAdministrador;
 import com.example.myfragmentmvp.Helpers.Helpers;
-import com.example.myfragmentmvp.HelpersServices.HelpersService;
-import com.example.myfragmentmvp.Models.Carrera;
-import com.example.myfragmentmvp.Models.Login;
-import com.example.myfragmentmvp.Presenters.CarreraPresenter;
-import com.example.myfragmentmvp.R;
-import com.example.myfragmentmvp.Views.TablaPrincipal;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.JsonHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-/**
- * A simple {@link Fragment} subclass.
- * Activities that contain this fragment must implement the
- * {@link TablaAdministrador.OnFragmentInteractionListener} interface
- * to handle interaction events.
- * Use the {@link TablaAdministrador#newInstance} factory method to
- * create an instance of this fragment.
- */
-public class TablaAdministrador extends Fragment implements CarreraPresenter.View {
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
-    Button btnNuevaCarrera;
-    public static String iden="a";
-    public TableLayout tl;
-    private static TablaPrincipal mCurrentInstance;
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
+import cz.msebera.android.httpclient.Header;
 
-    private OnFragmentInteractionListener mListener;
+public class Carrera {
+    public String nombre;
+    public String periodo;
+    public String codigo;
+    private static Carrera carrera;
+    private static String urlCarreras = Helpers.URL+ Enums.getCarreras;
 
-    public TablaAdministrador() {
-        // Required empty public constructor
-    }
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment TablaAdministrador.
-     */
-    // TODO: Rename and change types and number of parameters
-    public static TablaAdministrador newInstance(String param1, String param2) {
-        TablaAdministrador fragment = new TablaAdministrador();
-        Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
-        fragment.setArguments(args);
-        return fragment;
-    }
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
-    }
-
-    public static Context context() {
-        return mCurrentInstance.getApplicationContext();
-    }
-
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        final View view = inflater.inflate(R.layout.fragment_tabla_administrador, container, false);
-        btnNuevaCarrera = view.findViewById(R.id.btnEditarCarrera);
-        btnNuevaCarrera.setOnClickListener(new View.OnClickListener() {
+    public static void newCarrera(final Carrera carrera,final FormCarrera view){
+        RequestParams params = new RequestParams();
+        params.put("name", carrera.nombre);
+        params.put("periodo", carrera.periodo);
+        params.put("codigo", carrera.codigo);
+        AsyncHttpClient client = new AsyncHttpClient();
+        String token = Login.token;
+        client.addHeader("Authorization", "Token "+ token);
+        client.post( urlCarreras, params, new AsyncHttpResponseHandler() {
             @Override
-            public void onClick(View v) {
-                try {
-                    Intent intent = new Intent(getContext() , FormCarrera.class);
-                    startActivity(intent);
-                }catch (Exception e){}
-                System.out.println("Se eligió el id "+iden);
-                //Navegar a pagina de editar
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                System.out.println("No se murió al eliminar");
+                view.dialogNotificación("Nueva carrera",
+                        "Nombre: "+ carrera.nombre +
+                                " \n Periodo: " + carrera.periodo +
+                                " \n Codigo: "+ carrera.codigo);
+            }
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                System.out.println("Se murió al Crear");
             }
         });
-        tl = (TableLayout) view.findViewById(R.id.tl);
-        cargarTabla();
-        return view;
     }
 
-    // TODO: Rename method, update argument and hook method into UI event
-    public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
-        }
-    }
-
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        if (context instanceof OnFragmentInteractionListener) {
-            mListener = (OnFragmentInteractionListener) context;
-        } else {
-            throw new RuntimeException(context.toString()
-                    + " must implement OnFragmentInteractionListener");
-        }
-    }
-
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        mListener = null;
-    }
-
-
-    public void getData(String id){
-        AsyncHttpClient cliente = HelpersService.getClientToken();
-        cliente.get(Helpers.URL+Enums.getCarreras+id, new AsyncHttpResponseHandler() {
+    public static Carrera getCarrera(int id,final TablaAdministrador view){
+        System.out.println("getCarrera");
+        Carrera carrera = new Carrera();
+        String token = Login.token;
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.addHeader("Authorization", "Token "+ token);
+        client.get( urlCarreras+id, new AsyncHttpResponseHandler() {
+            @Override
+            public void onStart() {
+                // called before request is started
+            }
 
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-                System.out.println("-------------------------");
-                String x = new String(responseBody);
-                System.out.println(x);
-                System.out.println("-------------------------");
-                AlertDialog.Builder alerta = new AlertDialog.Builder(getView().getContext());
-                alerta.setMessage(x);
-                alerta.setCancelable(false);
-                alerta.setPositiveButton("ok", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        onFinish();
+                System.out.println("ESTADO:  " + statusCode);
+                if(statusCode == 200){
+                    try {
+                        JSONObject response =new JSONObject(new String(responseBody));
+                        Carrera ca1 = new Carrera();
+                        ca1.nombre = response.getString("name");
+                        ca1.periodo = response.getString("periodo");
+                        ca1.codigo = response.getString("codigo");
+                        view.dialogCarrera(ca1);
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                });
-                AlertDialog titlulo = alerta.create();
-                titlulo.show();
+                }
+
+
             }
 
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+
+            }
+
+            @Override
+            public void onRetry(int retryNo) {
+                System.out.println(retryNo);
+            }
+        });
+        return carrera;
+    }
+
+    public static void getCarrera2(int id,final EditCarrera view){
+        System.out.println("getCarrera2");
+        final Carrera[] carrera2 = new Carrera[1];
+        String token = Login.token;
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.addHeader("Authorization", "Token "+ token);
+        client.get( urlCarreras+ id, new AsyncHttpResponseHandler() {
+
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                System.out.println("ESTADO:  " + statusCode);
+                if(statusCode == 200){
+                    try {
+                        JSONObject response =new JSONObject(new String(responseBody));
+                        view.etNombrec2.setText(String.valueOf(response.getString("name")));
+                        view.etPerido2.setText(String.valueOf(response.getString("periodo")));
+                        view.etCodigo2.setText(String.valueOf(response.getString("codigo")));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
 
@@ -173,8 +131,49 @@ public class TablaAdministrador extends Fragment implements CarreraPresenter.Vie
         });
     }
 
-    @Override
-    public void cargarTabla() {
+    public static void deleteCarrera(int id, final TablaAdministrador view){
+        String token = Login.token;
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.addHeader("Authorization", "Token "+ token);
+        client.delete( urlCarreras+ id, new AsyncHttpResponseHandler() {
+
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                System.out.println("Se borró esa wea ");
+                view.dialogNotificación("Eliminación","Se ha eliminado un alumno correctamente");
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                System.out.println("Se murió al eliminar");
+            }
+        });
+    }
+
+    public static void updateCarrera(int id,Carrera carrera){
+        System.out.println("updateAlumno");
+        RequestParams params = new RequestParams();
+        params.put("name", carrera.nombre);
+        params.put("periodo", carrera.periodo);
+        params.put("codigo", carrera.codigo);
+        AsyncHttpClient client = new AsyncHttpClient();
+        String token = Login.token;
+        client.addHeader("Authorization", "Token "+ token);
+        client.put( urlCarreras+id, params, new AsyncHttpResponseHandler() {
+
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                System.out.println("Se ha modificado correctamente ");
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                System.out.println("No se modificó nada ");
+            }
+        });
+    }
+
+    public void cargarTabla(final TablaAdministrador view) {
         String token = Login.token;
         AsyncHttpClient cliente = new AsyncHttpClient();
         cliente.addHeader("Authorization", "Token "+ token);
@@ -183,7 +182,7 @@ public class TablaAdministrador extends Fragment implements CarreraPresenter.Vie
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONArray response) {
                 System.out.println("ESTO ES ONSUCCESS");
-                Context con = getView().getContext();
+                Context con = view.getContext();
                 try {
                     System.out.println("ESTO ES EL TRYYYYYY");
                     //System.out.println(response.toString());
@@ -236,7 +235,7 @@ public class TablaAdministrador extends Fragment implements CarreraPresenter.Vie
                     label_edit.setPadding(5, 5, 50, 5);
                     tr_head.addView(label_edit);// add the column to the table row here
 
-                    tl.addView(tr_head, new TableLayout.LayoutParams(
+                    view.tl.addView(tr_head, new TableLayout.LayoutParams(
                             TableRow.LayoutParams.FILL_PARENT,
                             TableRow.LayoutParams.WRAP_CONTENT));
 
@@ -283,13 +282,13 @@ public class TablaAdministrador extends Fragment implements CarreraPresenter.Vie
                                 try {
                                     String ids = temp.get("id").toString();
                                     System.out.println(".-..-.-.-.-.-.-..-.-.-");
-                                    iden = ids;
+
                                     //getData(iden);
-                                    getCarrera(Integer.parseInt(ids));
+                                    getCarrera(Integer.parseInt(ids),view);
                                     System.out.println(temp.get("id").toString());
                                     System.out.println(".-..-.-.-.-.-.-..-.-.-");
                                 }catch (Exception e){}
-                                System.out.println("Se eligió el id "+iden);
+                                System.out.println("Se eligió el id "+Helpers.select);
                                 //Navegar a pagina de editar
                             }
                         });
@@ -304,12 +303,12 @@ public class TablaAdministrador extends Fragment implements CarreraPresenter.Vie
                                 try {
                                     String ids = temp.get("id").toString();
                                     System.out.println(".-..-.-.-.-.-.-..-.-.-");
-                                    iden = ids;
-                                    deleteCarrera(Integer.parseInt(ids));
+
+                                    deleteCarrera(Integer.parseInt(ids),view);
                                     System.out.println(temp.get("id").toString());
                                     System.out.println(".-..-.-.-.-.-.-..-.-.-");
                                 }catch (Exception e){}
-                                System.out.println("Se eligió el id "+iden);
+                                System.out.println("Se eligió el id "+Helpers.select);
 
                             }
                         });
@@ -325,21 +324,20 @@ public class TablaAdministrador extends Fragment implements CarreraPresenter.Vie
                                 try {
                                     String ids = temp.get("id").toString();
                                     System.out.println(".-..-.-.-.-.-.-..-.-.-");
-                                    iden = ids;
                                     Helpers.select = Integer.parseInt(ids);
                                     System.out.println(temp.get("id").toString());
-                                    Intent intent = new Intent(getContext() , EditCarrera.class);
-                                    startActivity(intent);
+                                    Intent intent = new Intent(view.getContext() , EditCarrera.class);
+                                    view.startActivity(intent);
                                     System.out.println(".-..-.-.-.-.-.-..-.-.-");
                                 }catch (Exception e){}
-                                System.out.println("Se eligió el id "+iden);
+                                System.out.println("Se eligió el id "+Helpers.select);
                                 //Navegar a pagina de editar
                             }
                         });
                         tr.addView(btnEdit);
 
 
-                        tl.addView(tr, new TableLayout.LayoutParams(
+                        view.tl.addView(tr, new TableLayout.LayoutParams(
                                 TableRow.LayoutParams.FILL_PARENT,
                                 TableRow.LayoutParams.WRAP_CONTENT));
                     }
@@ -352,7 +350,7 @@ public class TablaAdministrador extends Fragment implements CarreraPresenter.Vie
             @Override
             public void onFailure(int statusCode, Header[] headers, Throwable error, JSONObject response) {
                 JSONObject arr = null;
-                Context con = getView().getContext();
+                Context con = view.getContext();
                 try {
                     Toast.makeText(con, "Error al obtener datos, quizá se murió el server", Toast.LENGTH_LONG).show();
 
@@ -362,49 +360,5 @@ public class TablaAdministrador extends Fragment implements CarreraPresenter.Vie
 
             }
         });
-    }
-
-    @Override
-    public void getCarrera(int id) {
-        Carrera.getCarrera(id,this);
-    }
-
-    @Override
-    public void dialogCarrera(Carrera carrera) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setTitle("Información del alumno seleccionado")
-                .setMessage("Nombre: "+ carrera.nombre +
-                        " \n Periodo: " + carrera.periodo +
-                        " \n Codigo: "+ carrera.codigo);
-        builder.create().show();
-    }
-
-    @Override
-    public void deleteCarrera(int id) {
-        Carrera.deleteCarrera(id,this);
-    }
-
-    @Override
-    public void dialogNotificación(String titulo, String texto) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setTitle(titulo)
-                .setMessage(texto);
-        builder.create().show();
-    }
-
-
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
-    public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        void onFragmentInteraction(Uri uri);
     }
 }

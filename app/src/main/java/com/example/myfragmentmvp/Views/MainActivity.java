@@ -16,6 +16,8 @@ import android.widget.EditText;
 import com.example.myfragmentmvp.Enums.Enums;
 import com.example.myfragmentmvp.Helpers.Helpers;
 import com.example.myfragmentmvp.HelpersServices.HelpersService;
+import com.example.myfragmentmvp.Models.Login;
+import com.example.myfragmentmvp.Presenters.LoginPresenter;
 import com.example.myfragmentmvp.R;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
@@ -27,7 +29,7 @@ import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements LoginPresenter.View {
     EditText usuario;
     EditText password;
     Button entrar;
@@ -39,8 +41,15 @@ public class MainActivity extends AppCompatActivity {
         usuario = (EditText) findViewById(R.id.editText);
         password = (EditText)findViewById(R.id.editText2);
         entrar = (Button)findViewById(R.id.btnentrar);
-    }
 
+        entrar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                entrar();
+            }
+        });
+    }
+    /*
     public void loggin(View view) throws JSONException {
         EditText editText = findViewById(R.id.editText);
         EditText editText2 = findViewById(R.id.editText2);
@@ -90,5 +99,17 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+    }
+    */
+    @Override
+    public void entrar(){
+        EditText editText = findViewById(R.id.editText);
+        EditText editText2 = findViewById(R.id.editText2);
+
+        Login.IniciarSesión(editText.getText().toString(),editText2.getText().toString());
+        if (Login.log == true){
+            Intent intent = new Intent(MainActivity.this , TablaPrincipal.class);
+            startActivity(intent);
+        }
     }
 }
